@@ -1,0 +1,104 @@
+What does mountlo do?
+---------------------
+
+This program essentially does the same as "mount -o loop".  If you
+don't know what "mount -o loop" does, see the manpage of mount.
+
+Why then is mountlo needed?
+---------------------------
+
+Because, for example "mount -o loop" can only run with super-user
+(root) privileges, while "mountlo" can be used by an ordinary user.
+
+Is this just a "suid" wrapper for mount then?
+---------------------------------------------
+
+No, mountlo is not a "suid root" program.  There's a small catch
+however: mountlo uses FUSE which needs to be installed as root.
+
+So does it just use FUSE to get around the root restriction?
+------------------------------------------------------------
+
+No.  It uses FUSE to export the filesystem hierarchy and data, but the
+actual filesystem runs in userspace (in User Mode Linux actually).
+
+It sounds like a complicated way to solve a trivial problem
+-----------------------------------------------------------
+
+Yes.  However, there are advantages to doing things this way.  If
+"mount -o loop" was just allowed to users, they possibly could craft a
+filesystem image which could crash the entire operating system.
+Filesystems were not written with arbitrary "input" in mind, so it is
+very hard to guarantee that all filesystems check for incorrect data.
+
+With the userspace approach, the worst that can happen is that the
+"mountlo" program crashes.  The safety of the system is thus ensured.
+
+How to use mountlo?
+-------------------
+
+Mounting:
+
+  mountlo imagefile mountpoint
+
+Unmounting:
+
+  fusermount -u mountpoint
+
+Does it accept any mount options?
+---------------------------------
+
+Yes, most options of mount may be given to mountlo.
+
+What other packages are needed to run mountlo?
+----------------------------------------------
+
+You need FUSE version 2.2 or greater.
+
+What's the licence of mountlo?
+------------------------------
+
+The little code that makes up the glue between UML and FUSE is
+licenced under the GPL.
+
+UML is GPL.  The FUSE kernel module is GPL, and the FUSE library is
+LGPL.
+
+Where is the latest version?
+----------------------------
+
+Look in
+
+   http://sourceforge.net/projects/fuse
+
+Is it possible to rebuild mountlo from source?
+----------------------------------------------
+
+Yes.  In fact it should be pretty easy, though it may take a couple of
+minutes.
+
+Dependencies:
+
+  - Kernel version 2.6.29 source
+
+  - Fuse version 2.8.0-pre2 source
+
+  - Util-linux-ng 2.15-rc2 source
+
+The compile steps are:
+
+ - Unpack the mountlo source.
+
+ - Unpack the kernel source _under_ the mountlo source directory
+
+ - Do the same with the fuse and util-linux-ng source packages
+
+ - type "./configure" then "make"
+
+
+Who is responsible for this mess?
+---------------------------------
+
+If you have any problems, patches or ideas you can turn to me
+<miklos@szeredi.hu> or the FUSE mailing list
+<fuse-devel@lists.sourceforge.net>.

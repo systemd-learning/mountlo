@@ -1,0 +1,23 @@
+dir /bin 755 0 0
+dir /mnt 755 0 0
+dir /dev 755 0 0
+file /bin/mount ../mount.static 755 0 0
+file /init ../fusexmp_uml 755 0 0
+nod /dev/console 0644 0 0 c 5 1
+nod /dev/fuseserv 0644 0 0 c 10 229
+nod /dev/ubd0 0644 0 0 b 98 0
+nod /dev/ubd1 0644 0 0 b 98 1
+nod /dev/ubd2 0644 0 0 b 98 2
+nod /dev/ubd3 0644 0 0 b 98 3
+nod /dev/ubd4 0644 0 0 b 98 4
+nod /dev/ubd5 0644 0 0 b 98 5
+nod /dev/ubd6 0644 0 0 b 98 6
+nod /dev/ubd7 0644 0 0 b 98 7
+nod /dev/ubd8 0644 0 0 b 98 8
+nod /dev/ubd9 0644 0 0 b 98 9
+nod /dev/ubd10 0644 0 0 b 98 10
+nod /dev/ubd11 0644 0 0 b 98 11
+nod /dev/ubd12 0644 0 0 b 98 12
+nod /dev/ubd13 0644 0 0 b 98 13
+nod /dev/ubd14 0644 0 0 b 98 14
+nod /dev/ubd15 0644 0 0 b 98 15
