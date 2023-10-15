@@ -1,0 +1,140 @@
+diff --git a/arch/um/include/shared/init.h b/arch/um/include/shared/init.h
+index 37dd097c..4d7dc235 100644
+--- a/arch/um/include/shared/init.h
++++ b/arch/um/include/shared/init.h
+@@ -125,16 +125,16 @@ extern struct uml_param __uml_setup_start, __uml_setup_end;
+  * Mark functions and data as being only used at initialization
+  * or exit time.
+  */
+-#define __uml_init_setup	__used __section(.uml.setup.init)
+-#define __uml_setup_help	__used __section(.uml.help.init)
+-#define __uml_init_call		__used __section(.uml.initcall.init)
+-#define __uml_postsetup_call	__used __section(.uml.postsetup.init)
+-#define __uml_exit_call		__used __section(.uml.exitcall.exit)
++#define __uml_init_setup	 __section(.uml.setup.init)
++#define __uml_setup_help	 __section(.uml.help.init)
++#define __uml_init_call		 __section(.uml.initcall.init)
++#define __uml_postsetup_call	 __section(.uml.postsetup.init)
++#define __uml_exit_call		 __section(.uml.exitcall.exit)
+ 
+ #ifndef __KERNEL__
+ 
+ #define __define_initcall(level,fn) \
+-	static initcall_t __initcall_##fn __used \
++	static initcall_t __initcall_##fn \
+ 	__attribute__((__section__(".initcall" level ".init"))) = fn
+ 
+ /* Userspace initcalls shouldn't depend on anything in the kernel, so we'll
+diff --git a/arch/um/os-Linux/mem.c b/arch/um/os-Linux/mem.c
+index 93a11d7e..261b479b 100644
+--- a/arch/um/os-Linux/mem.c
++++ b/arch/um/os-Linux/mem.c
+@@ -6,6 +6,7 @@
+ #include <stdio.h>
+ #include <stddef.h>
+ #include <stdlib.h>
++#include <sys/stat.h>
+ #include <unistd.h>
+ #include <errno.h>
+ #include <fcntl.h>
+diff --git a/arch/um/os-Linux/start_up.c b/arch/um/os-Linux/start_up.c
+index 183db26d..a1c1a908 100644
+--- a/arch/um/os-Linux/start_up.c
++++ b/arch/um/os-Linux/start_up.c
+@@ -12,6 +12,8 @@
+ #include <sched.h>
+ #include <signal.h>
+ #include <string.h>
++#include <sys/time.h>
++#include <sys/resource.h>
+ #include <sys/mman.h>
+ #include <sys/ptrace.h>
+ #include <sys/stat.h>
+diff --git a/arch/um/sys-i386/shared/sysdep/ptrace.h b/arch/um/sys-i386/shared/sysdep/ptrace.h
+index d50e62e0..4926daa1 100644
+--- a/arch/um/sys-i386/shared/sysdep/ptrace.h
++++ b/arch/um/sys-i386/shared/sysdep/ptrace.h
+@@ -17,7 +17,7 @@ static inline void update_debugregs(int seq) {}
+ /* syscall emulation path in ptrace */
+ 
+ #ifndef PTRACE_SYSEMU
+-#define PTRACE_SYSEMU 31
++//#define PTRACE_SYSEMU 31
+ #endif
+ 
+ void set_using_sysemu(int value);
+@@ -48,7 +48,7 @@ extern int sysemu_supported;
+ #define REGS_RESTART_SYSCALL(r) IP_RESTART_SYSCALL(REGS_IP(r))
+ 
+ #ifndef PTRACE_SYSEMU_SINGLESTEP
+-#define PTRACE_SYSEMU_SINGLESTEP 32
++//#define PTRACE_SYSEMU_SINGLESTEP 32
+ #endif
+ 
+ struct uml_pt_regs {
+diff --git a/include/linux/compiler-gcc.h b/include/linux/compiler-gcc.h
+index a3ed7cb8..2fabdc0a 100644
+--- a/include/linux/compiler-gcc.h
++++ b/include/linux/compiler-gcc.h
+@@ -83,4 +83,4 @@
+ #define __gcc_header(x) #x
+ #define _gcc_header(x) __gcc_header(linux/compiler-gcc##x.h)
+ #define gcc_header(x) _gcc_header(x)
+-#include gcc_header(__GNUC__)
++//#include gcc_header(__GNUC__)
+diff --git a/include/linux/compiler.h b/include/linux/compiler.h
+index d95da102..3d9a9ebe 100644
+--- a/include/linux/compiler.h
++++ b/include/linux/compiler.h
+@@ -274,4 +274,6 @@ void ftrace_likely_update(struct ftrace_branch_data *f, int val, int expect);
+  */
+ #define ACCESS_ONCE(x) (*(volatile typeof(x) *)&(x))
+ 
++#define uninitialized_var(x) x = x
++
+ #endif /* __LINUX_COMPILER_H */
+diff --git a/include/linux/inotify.h b/include/linux/inotify.h
+index 37ea2894..82efdf3e 100644
+--- a/include/linux/inotify.h
++++ b/include/linux/inotify.h
+@@ -230,12 +230,12 @@ static inline void put_inotify_watch(struct inotify_watch *watch)
+ {
+ }
+ 
+-extern inline int pin_inotify_watch(struct inotify_watch *watch)
++static inline int pin_inotify_watch(struct inotify_watch *watch)
+ {
+ 	return 0;
+ }
+ 
+-extern inline void unpin_inotify_watch(struct inotify_watch *watch)
++static void unpin_inotify_watch(struct inotify_watch *watch)
+ {
+ }
+ 
+diff --git a/include/linux/tty_driver.h b/include/linux/tty_driver.h
+index 08e08833..8f359e0f 100644
+--- a/include/linux/tty_driver.h
++++ b/include/linux/tty_driver.h
+@@ -310,7 +310,7 @@ extern void tty_set_operations(struct tty_driver *driver,
+ extern struct tty_driver *tty_find_polling_driver(char *name, int *line);
+ 
+ extern void tty_driver_kref_put(struct tty_driver *driver);
+-extern inline struct tty_driver *tty_driver_kref_get(struct tty_driver *d)
++static inline struct tty_driver *tty_driver_kref_get(struct tty_driver *d)
+ {
+ 	kref_get(&d->kref);
+ 	return d;
+diff --git a/kernel/timeconst.pl b/kernel/timeconst.pl
+index eb51d76e..063fcc0b 100644
+--- a/kernel/timeconst.pl
++++ b/kernel/timeconst.pl
+@@ -370,7 +370,7 @@ if ($hz eq '--can') {
+ 	}
+ 
+ 	@val = @{$canned_values{$hz}};
+-	if (!defined(@val)) {
++	if (!(@val)) {
+ 		@val = compute_values($hz);
+ 	}
+ 	output($hz, @val);

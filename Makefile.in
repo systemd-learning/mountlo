@@ -9,18 +9,20 @@ VERSION = @PACKAGE_VERSION@
 distdir = $(PACKAGE)-$(VERSION)
 INSTALL_PROGRAM = install -m 755
 kernel_version = 2.6.29
-fuse_version = 2.8.0-pre2
-util_linux_ng_version = 2.15-rc2
+fuse_version = 2.9.7
+util_linux_ng_version = 2.30
 kernel_source = linux-$(kernel_version)
 fuse_source = fuse-$(fuse_version)
-util_linux_ng_source = util-linux-ng-$(util_linux_ng_version)
+util_linux_ng_source = util-linux-$(util_linux_ng_version)
 kernel_patch = mountlo-$(kernel_version).patch
+kernel_fix_patch = fix_kernel_errors.patch
 kernel_config = config-$(kernel_version)
 DISTFILES = COPYING Makefile.in README aclocal.m4 $(kernel_config) \
 	$(kernel_patch) config.h.in configure configure.ac initramfs_list \
 	mountlo.c fuseserv_kern.c fuseserv_user.c fusexmp_uml.c
 
-libfuse = $(shell pwd)/$(fuse_source)/lib/.libs/libfuse.a
+base = $(shell pwd)
+libfuse = $(base)/$(fuse_source)/lib/.libs/libfuse.a
 FUSE_LIBS = $(libfuse)
 export FUSE_LIBS
 
@@ -43,21 +45,31 @@ $(kernel_source)/linux: $(kernel_source) \
 			$(kernel_source)/arch/um/kernel/mountlo-config.h \
 			$(kernel_source)/$(kernel_patch) \
 			$(kernel_source)/.config
-	cd $(kernel_source) && make -j2 ARCH=um SUBARCH=i386 CC=gcc-4.4
+	cd $(kernel_source) && make -j2 ARCH=um SUBARCH=i386
 
 mount.static:
-	cd $(util_linux_ng_source) && ./configure --enable-static-programs=yes CC="$(CC)" && make CPPFLAGS=-I/usr/include/blkid
-	cp -f $(util_linux_ng_source)/mount/mount.static mount.static
+	cd $(base) && \
+	if [ ! -d $(util_linux_ng_source) ]; then tar xfz 3rd/$(util_linux_ng_source).tar.gz; fi
+
+	cd $(util_linux_ng_source) && ./autogen.sh && ./configure --enable-static-programs=yes  --without-ncurses --without-python  CC="$(CC)" && make CPPFLAGS=-I/usr/include/blkid
+	cp -f $(util_linux_ng_source)/mount.static mount.static
 	strip mount.static
 	touch initramfs_list
 
 $(libfuse):
+	cd $(base) && \
+	if [ ! -d $(fuse_source) ]; then tar  xfz 3rd/$(fuse_source).tar.gz; fi
+
 	cd $(fuse_source) && ./configure CC="$(CC)" && make
 
 fusexmp_uml: fusexmp_uml.c $(libfuse)
 	$(CC) $(FUSE_CFLAGS) fusexmp_uml.c -o fusexmp_uml $(FUSE_LDFLAGS)
 	strip fusexmp_uml
 	touch initramfs_list
+
+$(kernel_source):
+	cd $(base) && \
+	if [ ! -d $(kernel_source) ]; then mkdir -p $(kernel_source); cd $(kernel_source) && tar xfz ../3rd/$(kernel_source).tar.gz; fi
 
 $(kernel_source)/arch/um/drivers/fuseserv_kern.c: fuseserv_kern.c
 	cp -f fuseserv_kern.c $(kernel_source)/arch/um/drivers
@@ -77,6 +89,12 @@ $(kernel_source)/$(kernel_patch): $(kernel_patch)
 	fi
 	cp -f $(kernel_patch) $(kernel_source)/
 	cd $(kernel_source); patch -p1 < $(kernel_patch)
+	if test -f $(kernel_source)/$(kernel_fix_patch); then \
+		cd $(kernel_source); patch -p1 -R < $(kernel_fix_patch); \
+	fi
+	cp -f $(kernel_fix_patch) $(kernel_source)/
+	cd $(kernel_source); patch -p1 < $(kernel_fix_patch);
+
 
 $(kernel_source)/.config: $(kernel_config)
 	cp -f $(kernel_config) $(kernel_source)/.config
