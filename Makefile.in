@@ -49,7 +49,7 @@ $(kernel_source)/linux: $(kernel_source) \
 
 mount.static:
 	cd $(base) && \
-	if [ ! -d $(util_linux_ng_source) ]; then tar xfz 3rd/$(util_linux_ng_source).tar.gz; fi
+	if [ ! -d $(util_linux_ng_source) ]; then mkdir -p $(util_linux_ng_source); cd $(util_linux_ng_source); tar xfz 3rd/$(util_linux_ng_source).tar.gz; fi
 
 	cd $(util_linux_ng_source) && ./autogen.sh && ./configure --enable-static-programs=yes  --without-ncurses --without-python  CC="$(CC)" && make CPPFLAGS=-I/usr/include/blkid
 	cp -f $(util_linux_ng_source)/mount.static mount.static
